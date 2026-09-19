@@ -193,5 +193,21 @@ client.on("guildCreate", async guild => {
     console.error(e);
   }
 });
+client.on("guildMemberAdd", async (member) => {
+  try {
+    const role = member.guild.roles.cache.find(
+      r => r.name === "متدرب"
+    );
 
+    if (!role) {
+      console.log(`رول متدرب غير موجود في ${member.guild.name}`);
+      return;
+    }
+
+    await member.roles.add(role);
+    console.log(`تم إعطاء رول متدرب إلى ${member.user.tag}`);
+  } catch (error) {
+    console.error("فشل إعطاء رول متدرب:", error);
+  }
+});
 client.login(token);
