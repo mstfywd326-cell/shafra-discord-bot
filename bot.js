@@ -5,6 +5,14 @@ const {
 } = require("discord.js");
 
 const token = process.env.BOT_TOKEN;
+const http = require("http");
+
+const PORT = process.env.PORT || 10000;
+
+http.createServer((req, res) => {
+  res.writeHead(200);
+  res.end("Shafra Bot is online");
+}).listen(PORT);
 if (!token) throw new Error("ضع BOT_TOKEN في ملف .env");
 
 const client = new Client({
