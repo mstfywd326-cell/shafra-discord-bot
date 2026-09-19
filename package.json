@@ -1,16 +1,20 @@
 {
-  "name": "shafra-discord-template",
+  "name": "shafra-discord-bot",
   "version": "2.0.0",
-  "description": "Shafra FiveM Discord bot",
+  "description": "Shafra Discord bot with setup, welcome, trainee role, panel and music",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js"
   },
+  "engines": {
+    "node": ">=18.18.0"
+  },
   "dependencies": {
-    "discord.js": "^14.21.0",
+    "@discord-player/extractor": "7.2.0",
+    "discord-player": "7.2.0",
+    "discord-player-youtubedlp": "1.2.1",
+    "discord.js": "14.27.0",
     "dotenv": "^16.6.1",
-    "discord-player": "^7.2.0",
-    "@discord-player/extractor": "^7.0.0",
     "ffmpeg-static": "^5.2.0"
   }
 }
