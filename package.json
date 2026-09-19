@@ -1,13 +1,16 @@
 {
   "name": "shafra-discord-template",
-  "version": "1.0.0",
-  "description": "Shafra FiveM gang Discord server template bot",
+  "version": "2.0.0",
+  "description": "Shafra FiveM Discord bot",
   "main": "bot.js",
   "scripts": {
     "start": "node bot.js"
   },
   "dependencies": {
     "discord.js": "^14.21.0",
-    "dotenv": "^16.6.1"
+    "dotenv": "^16.6.1",
+    "discord-player": "^7.2.0",
+    "@discord-player/extractor": "^7.0.0",
+    "ffmpeg-static": "^5.2.0"
   }
 }
