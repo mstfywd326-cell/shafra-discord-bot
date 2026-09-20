@@ -501,358 +501,681 @@ function renderWelcome(text, member, role) {
       role ? `<@&${role.id}>` : "متدرب"
     );
 }
-
 // ==================== تشغيل البوت ====================
 
 client.once("ready", async () => {
-  console.log(
-    `✅ تم تسجيل الدخول باسم ${client.user.tag}`
-  );
+  console.log(`✅ تم تسجيل الدخول باسم ${client.user.tag}`);
 
   try {
-    await player.extractors.loadMulti(
-      DefaultExtractors
-    );
-
+    await player.extractors.loadMulti(DefaultExtractors);
     console.log("🎵 تم تحميل مصادر الموسيقى.");
-  } catch (error
-            // ==================== نهاية أوامر الموسيقى ====================
-      }
+  } catch (error) {
+    console.error("❌ فشل تحميل مصادر الموسيقى:", error);
+  }
 
-      // ==================== أزرار لوحة التحكم ====================
+  await registerCommands();
+  console.log("✅ تم تسجيل أوامر البوت.");
+});
 
-      if (interaction.isButton()) {
+// ==================== أوامر وتفاعلات البوت ====================
+
+client.on("interactionCreate", async interaction => {
+  try {
+    // ==================== أوامر Slash ====================
+
+    if (interaction.isChatInputCommand()) {
+      // لوحة التحكم
+      if (interaction.commandName === "panel") {
         if (
           !interaction.memberPermissions?.has(
             PermissionFlagsBits.ManageGuild
           )
         ) {
           return interaction.reply({
-            content:
-              "❌ تحتاج صلاحية إدارة السيرفر.",
+            content: "❌ تحتاج صلاحية إدارة السيرفر.",
             ephemeral: true
           });
         }
-
-        const guildId = interaction.guild.id;
-        const cfg = getConfig(guildId);
-
-        // تشغيل / إيقاف الترحيب
-        if (
-          interaction.customId ===
-          "welcome_toggle"
-        ) {
-          updateConfig(guildId, {
-            welcomeEnabled:
-              !cfg.welcomeEnabled
-          });
-
-          const newCfg = getConfig(guildId);
-
-          return interaction.update({
-            embeds: [
-              panelEmbed(interaction.guild)
-            ],
-            components: panelRows()
-          });
-        }
-
-        // رسالة الترحيب
-        if (
-          interaction.customId ===
-          "welcome_message"
-        ) {
-          const modal =
-            new ModalBuilder()
-              .setCustomId(
-                "welcome_message_modal"
-              )
-              .setTitle(
-                "✏️ تعديل رسالة الترحيب"
-              );
-
-          const input =
-            new TextInputBuilder()
-              .setCustomId(
-                "welcome_message_input"
-              )
-              .setLabel(
-                "اكتب رسالة الترحيب"
-              )
-              .setStyle(
-                TextInputStyle.Paragraph
-              )
-              .setRequired(true)
-              .setMaxLength(1000)
-              .setValue(
-                cfg.welcomeMessage
-              );
-
-          modal.addComponents(
-            new ActionRowBuilder().addComponents(
-              input
-            )
-          );
-
-          return interaction.showModal(
-            modal
-          );
-        }
-
-        // التجهيز التلقائي
-        if (
-          interaction.customId ===
-          "auto_setup"
-        ) {
-          await interaction.deferUpdate();
-
-          try {
-            const created =
-              await setupGuild(
-                interaction.guild
-              );
-
-            const trainee =
-              created["🟢 متدرب"];
-
-            const welcome =
-              interaction.guild.channels.cache.find(
-                c =>
-                  c.type ===
-                    ChannelType.GuildText &&
-                  (
-                    c.name ===
-                      "👋・ترحيب" ||
-                    c.name.includes("ترحيب")
-                  )
-              );
-
-            updateConfig(
-              guildId,
-              {
-                traineeRoleId:
-                  trainee?.id ||
-                  cfg.traineeRoleId,
-
-                welcomeChannelId:
-                  welcome?.id ||
-                  cfg.welcomeChannelId
-              }
-            );
-
-            return interaction.editReply({
-              embeds: [
-                panelEmbed(
-                  interaction.guild
-                )
-              ],
-              components: panelRows()
-            });
-          } catch (error) {
-            console.error(error);
-
-            return interaction.editReply({
-              content:
-                "❌ حدث خطأ أثناء التجهيز.",
-              embeds: [],
-              components: []
-            });
-          }
-        }
-
-        // السماح بالموسيقى بكل القنوات
-        if (
-          interaction.customId ===
-          "music_all"
-        ) {
-          updateConfig(guildId, {
-            musicAllChannels:
-              !cfg.musicAllChannels
-          });
-
-          return interaction.update({
-            embeds: [
-              panelEmbed(interaction.guild)
-            ],
-            components: panelRows()
-          });
-        }
-
-        // إعادة رسالة الترحيب الافتراضية
-        if (
-          interaction.customId ===
-          "welcome_reset"
-        ) {
-          updateConfig(guildId, {
-            welcomeMessage:
-              "هلا وغلا {user} 👋\nنورت سيرفر **{server}** ❤️\nتم إعطاؤك رتبة **{role}**."
-          });
-
-          return interaction.update({
-            embeds: [
-              panelEmbed(interaction.guild)
-            ],
-            components: panelRows()
-          });
-        }
-      }
-
-      // ==================== القوائم ====================
-
-      if (
-        interaction.isRoleSelectMenu()
-      ) {
-        if (
-          interaction.customId ===
-          "trainee_role"
-        ) {
-          if (
-            !interaction.memberPermissions?.has(
-              PermissionFlagsBits.ManageGuild
-            )
-          ) {
-            return interaction.reply({
-              content:
-                "❌ تحتاج صلاحية إدارة السيرفر.",
-              ephemeral: true
-            });
-          }
-
-          const roleId =
-            interaction.values[0];
-
-          updateConfig(
-            interaction.guild.id,
-            {
-              traineeRoleId: roleId
-            }
-          );
-
-          return interaction.update({
-            embeds: [
-              panelEmbed(interaction.guild)
-            ],
-            components: panelRows()
-          });
-        }
-      }
-
-      if (
-        interaction.isChannelSelectMenu()
-      ) {
-        if (
-          !interaction.memberPermissions?.has(
-            PermissionFlagsBits.ManageGuild
-          )
-        ) {
-          return interaction.reply({
-            content:
-              "❌ تحتاج صلاحية إدارة السيرفر.",
-            ephemeral: true
-          });
-        }
-
-        const channelId =
-          interaction.values[0];
-
-        // قناة الترحيب
-        if (
-          interaction.customId ===
-          "welcome_channel"
-        ) {
-          updateConfig(
-            interaction.guild.id,
-            {
-              welcomeChannelId:
-                channelId
-            }
-          );
-
-          return interaction.update({
-            embeds: [
-              panelEmbed(interaction.guild)
-            ],
-            components: panelRows()
-          });
-        }
-
-        // قناة الموسيقى
-        if (
-          interaction.customId ===
-          "music_channel"
-        ) {
-          updateConfig(
-            interaction.guild.id,
-            {
-              musicTextChannelId:
-                channelId
-            }
-          );
-
-          return interaction.update({
-            embeds: [
-              panelEmbed(interaction.guild)
-            ],
-            components: panelRows()
-          });
-        }
-      }
-
-      // ==================== مودال رسالة الترحيب ====================
-
-      if (
-        interaction.isModalSubmit() &&
-        interaction.customId ===
-          "welcome_message_modal"
-      ) {
-        const message =
-          interaction.fields.getTextInputValue(
-            "welcome_message_input"
-          );
-
-        updateConfig(
-          interaction.guild.id,
-          {
-            welcomeMessage: message
-          }
-        );
 
         return interaction.reply({
-          content:
-            "✅ تم حفظ رسالة الترحيب الجديدة.",
-          embeds: [
-            panelEmbed(interaction.guild)
-          ],
+          embeds: [panelEmbed(interaction.guild)],
           components: panelRows(),
           ephemeral: true
         });
       }
 
-    } catch (error) {
-      console.error(
-        "❌ Interaction Error:",
-        error
-      );
+      // التجهيز
+      if (interaction.commandName === "setup") {
+        if (
+          !interaction.memberPermissions?.has(
+            PermissionFlagsBits.ManageGuild
+          )
+        ) {
+          return interaction.reply({
+            content: "❌ تحتاج صلاحية إدارة السيرفر.",
+            ephemeral: true
+          });
+        }
 
-      if (
-        interaction.replied ||
-        interaction.deferred
-      ) {
-        await interaction.followUp({
-          content:
-            "❌ حدث خطأ غير متوقع.",
-          ephemeral: true
-        }).catch(() => {});
-      } else {
-        await interaction.reply({
-          content:
-            "❌ حدث خطأ غير متوقع.",
-          ephemeral: true
-        }).catch(() => {});
+        await interaction.deferReply({ ephemeral: true });
+
+        try {
+          const created = await setupGuild(interaction.guild);
+          const trainee = created["🟢 متدرب"];
+
+          updateConfig(interaction.guild.id, {
+            traineeRoleId:
+              trainee?.id ||
+              getConfig(interaction.guild.id).traineeRoleId
+          });
+
+          return interaction.editReply({
+            content:
+              "✅ تم تجهيز رتب وقنوات Shafra بنجاح."
+          });
+        } catch (error) {
+          console.error("Setup Error:", error);
+
+          return interaction.editReply({
+            content: "❌ حدث خطأ أثناء تجهيز السيرفر."
+          });
+        }
+      }
+
+      // ==================== الموسيقى ====================
+
+      const musicCommands = [
+        "play",
+        "skip",
+        "pause",
+        "resume",
+        "stop",
+        "queue",
+        "nowplaying",
+        "volume"
+      ];
+
+      if (musicCommands.includes(interaction.commandName)) {
+        const cfg = getConfig(interaction.guild.id);
+
+        if (
+          cfg.musicTextChannelId &&
+          !cfg.musicAllChannels &&
+          interaction.channelId !== cfg.musicTextChannelId
+        ) {
+          return interaction.reply({
+            content:
+              `🎵 استخدم قناة الموسيقى <#${cfg.musicTextChannelId}>.`,
+            ephemeral: true
+          });
+        }
+
+        // تشغيل
+        if (interaction.commandName === "play") {
+          const voiceChannel =
+            interaction.member?.voice?.channel;
+
+          if (!voiceChannel) {
+            return interaction.reply({
+              content:
+                "❌ ادخل روم صوتي أولاً.",
+              ephemeral: true
+            });
+          }
+
+          const query =
+            interaction.options.getString("query", true);
+
+          await interaction.deferReply();
+
+          try {
+            await player.play(
+              voiceChannel,
+              query,
+              {
+                nodeOptions: {
+                  metadata: interaction.channel,
+                  leaveOnEnd: true,
+                  leaveOnEmpty: true,
+                  leaveOnStop: true
+                }
+              }
+            );
+
+            return interaction.editReply(
+              `🎵 جاري تشغيل: **${query}**`
+            );
+          } catch (error) {
+            console.error("Play Error:", error);
+
+            return interaction.editReply(
+              "❌ ما قدرت أشغل الأغنية. جرّب اسم أغنية أو رابط آخر."
+            );
+          }
+        }
+
+        const queue =
+          useQueue(interaction.guild.id);
+
+        // تخطي
+        if (interaction.commandName === "skip") {
+          if (!queue) {
+            return interaction.reply(
+              "❌ ماكو موسيقى شغالة حالياً."
+            );
+          }
+
+          if (!queue.isPlaying()) {
+            return interaction.reply(
+              "❌ ماكو أغنية شغالة حالياً."
+            );
+          }
+
+          queue.node.skip();
+
+          return interaction.reply(
+            "⏭️ تم تخطي الأغنية."
+          );
+        }
+
+        // إيقاف مؤقت
+        if (interaction.commandName === "pause") {
+          if (!queue) {
+            return interaction.reply(
+              "❌ ماكو موسيقى شغالة."
+            );
+          }
+
+          queue.node.setPaused(true);
+
+          return interaction.reply(
+            "⏸️ تم إيقاف الموسيقى مؤقتاً."
+          );
+        }
+
+        // استئناف
+        if (interaction.commandName === "resume") {
+          if (!queue) {
+            return interaction.reply(
+              "❌ ماكو موسيقى شغالة."
+            );
+          }
+
+          queue.node.setPaused(false);
+
+          return interaction.reply(
+            "▶️ تم استئناف الموسيقى."
+          );
+        }
+
+        // إيقاف
+        if (interaction.commandName === "stop") {
+          if (!queue) {
+            return interaction.reply(
+              "❌ ماكو موسيقى شغالة."
+            );
+          }
+
+          queue.delete();
+
+          return interaction.reply(
+            "⏹️ تم إيقاف الموسيقى وخروج البوت."
+          );
+        }
+
+        // قائمة الانتظار
+        if (interaction.commandName === "queue") {
+          if (!queue) {
+            return interaction.reply(
+              "❌ قائمة الانتظار فارغة."
+            );
+          }
+
+          const current =
+            queue.currentTrack;
+
+          const tracks =
+            queue.tracks.toArray();
+
+          let text =
+            current
+              ? `🎵 **الآن:** ${current.title}\n\n`
+              : "🎵 لا توجد أغنية حالية.\n\n";
+
+          if (tracks.length) {
+            text += "**القائمة:**\n";
+
+            text += tracks
+              .slice(0, 10)
+              .map(
+                (track, index) =>
+                  `${index + 1}. ${track.title}`
+              )
+              .join("\n");
+          } else {
+            text += "القائمة القادمة فارغة.";
+          }
+
+          return interaction.reply({
+            content: text
+          });
+        }
+
+        // الأغنية الحالية
+        if (
+          interaction.commandName === "nowplaying"
+        ) {
+          if (!queue?.currentTrack) {
+            return interaction.reply(
+              "❌ ماكو أغنية شغالة حالياً."
+            );
+          }
+
+          const track =
+            queue.currentTrack;
+
+          return interaction.reply(
+            `🎵 **الآن يتم تشغيل:**\n**${track.title}**\n👤 ${track.author || "غير معروف"}`
+          );
+        }
+
+        // الصوت
+        if (interaction.commandName === "volume") {
+          if (!queue) {
+            return interaction.reply(
+              "❌ ماكو موسيقى شغالة."
+            );
+          }
+
+          const level =
+            interaction.options.getInteger(
+              "level",
+              true
+            );
+
+          queue.node.setVolume(level);
+
+          return interaction.reply(
+            `🔊 تم ضبط الصوت على **${level}%**.`
+          );
+        }
       }
     }
+
+    // ==================== أزرار لوحة التحكم ====================
+
+    if (interaction.isButton()) {
+      if (
+        !interaction.memberPermissions?.has(
+          PermissionFlagsBits.ManageGuild
+        )
+      ) {
+        return interaction.reply({
+          content: "❌ تحتاج صلاحية إدارة السيرفر.",
+          ephemeral: true
+        });
+      }
+
+      const guildId =
+        interaction.guild.id;
+
+      const cfg =
+        getConfig(guildId);
+
+      // تشغيل / إيقاف الترحيب
+      if (
+        interaction.customId ===
+        "welcome_toggle"
+      ) {
+        updateConfig(guildId, {
+          welcomeEnabled:
+            !cfg.welcomeEnabled
+        });
+
+        return interaction.update({
+          embeds: [
+            panelEmbed(interaction.guild)
+          ],
+          components: panelRows()
+        });
+      }
+
+      // رسالة الترحيب
+      if (
+        interaction.customId ===
+        "welcome_message"
+      ) {
+        const modal =
+          new ModalBuilder()
+            .setCustomId(
+              "welcome_message_modal"
+            )
+            .setTitle(
+              "✏️ تعديل رسالة الترحيب"
+            );
+
+        const input =
+          new TextInputBuilder()
+            .setCustomId(
+              "welcome_message_input"
+            )
+            .setLabel(
+              "اكتب رسالة الترحيب"
+            )
+            .setStyle(
+              TextInputStyle.Paragraph
+            )
+            .setRequired(true)
+            .setMaxLength(1000)
+            .setValue(
+              cfg.welcomeMessage
+            );
+
+        modal.addComponents(
+          new ActionRowBuilder().addComponents(
+            input
+          )
+        );
+
+        return interaction.showModal(
+          modal
+        );
+      }
+
+      // التجهيز التلقائي
+      if (
+        interaction.customId ===
+        "auto_setup"
+      ) {
+        await interaction.deferUpdate();
+
+        try {
+          const created =
+            await setupGuild(
+              interaction.guild
+            );
+
+          const trainee =
+            created["🟢 متدرب"];
+
+          updateConfig(
+            guildId,
+            {
+              traineeRoleId:
+                trainee?.id ||
+                cfg.traineeRoleId
+            }
+          );
+
+          return interaction.editReply({
+            embeds: [
+              panelEmbed(
+                interaction.guild
+              )
+            ],
+            components: panelRows()
+          });
+        } catch (error) {
+          console.error(error);
+
+          return interaction.editReply({
+            content:
+              "❌ حدث خطأ أثناء التجهيز.",
+            embeds: [],
+            components: []
+          });
+        }
+      }
+
+      // السماح بالموسيقى بكل القنوات
+      if (
+        interaction.customId ===
+        "music_all"
+      ) {
+        updateConfig(guildId, {
+          musicAllChannels:
+            !cfg.musicAllChannels
+        });
+
+        return interaction.update({
+          embeds: [
+            panelEmbed(interaction.guild)
+          ],
+          components: panelRows()
+        });
+      }
+
+      // إعادة رسالة الترحيب
+      if (
+        interaction.customId ===
+        "welcome_reset"
+      ) {
+        updateConfig(guildId, {
+          welcomeMessage:
+            "هلا وغلا {user} 👋\nنورت سيرفر **{server}** ❤️\nتم إعطاؤك رتبة **{role}**."
+        });
+
+        return interaction.update({
+          embeds: [
+            panelEmbed(interaction.guild)
+          ],
+          components: panelRows()
+        });
+      }
+    }
+
+    // ==================== اختيار الرتبة ====================
+
+    if (
+      interaction.isRoleSelectMenu()
+    ) {
+      if (
+        !interaction.memberPermissions?.has(
+          PermissionFlagsBits.ManageGuild
+        )
+      ) {
+        return interaction.reply({
+          content:
+            "❌ تحتاج صلاحية إدارة السيرفر.",
+          ephemeral: true
+        });
+      }
+
+      if (
+        interaction.customId ===
+        "trainee_role"
+      ) {
+        updateConfig(
+          interaction.guild.id,
+          {
+            traineeRoleId:
+              interaction.values[0]
+          }
+        );
+
+        return interaction.update({
+          embeds: [
+            panelEmbed(interaction.guild)
+          ],
+          components: panelRows()
+        });
+      }
+    }
+
+    // ==================== اختيار القنوات ====================
+
+    if (
+      interaction.isChannelSelectMenu()
+    ) {
+      if (
+        !interaction.memberPermissions?.has(
+          PermissionFlagsBits.ManageGuild
+        )
+      ) {
+        return interaction.reply({
+          content:
+            "❌ تحتاج صلاحية إدارة السيرفر.",
+          ephemeral: true
+        });
+      }
+
+      const channelId =
+        interaction.values[0];
+
+      if (
+        interaction.customId ===
+        "welcome_channel"
+      ) {
+        updateConfig(
+          interaction.guild.id,
+          {
+            welcomeChannelId:
+              channelId
+          }
+        );
+
+        return interaction.update({
+          embeds: [
+            panelEmbed(interaction.guild)
+          ],
+          components: panelRows()
+        });
+      }
+
+      if (
+        interaction.customId ===
+        "music_channel"
+      ) {
+        updateConfig(
+          interaction.guild.id,
+          {
+            musicTextChannelId:
+              channelId
+          }
+        );
+
+        return interaction.update({
+          embeds: [
+            panelEmbed(interaction.guild)
+          ],
+          components: panelRows()
+        });
+      }
+    }
+
+    // ==================== مودال الترحيب ====================
+
+    if (
+      interaction.isModalSubmit() &&
+      interaction.customId ===
+        "welcome_message_modal"
+    ) {
+      const message =
+        interaction.fields.getTextInputValue(
+          "welcome_message_input"
+        );
+
+      updateConfig(
+        interaction.guild.id,
+        {
+          welcomeMessage: message
+        }
+      );
+
+      return interaction.reply({
+        content:
+          "✅ تم حفظ رسالة الترحيب الجديدة.",
+        embeds: [
+          panelEmbed(interaction.guild)
+        ],
+        components: panelRows(),
+        ephemeral: true
+      });
+    }
+
+  } catch (error) {
+    console.error(
+      "❌ Interaction Error:",
+      error
+    );
+
+    if (
+      interaction.replied ||
+      interaction.deferred
+    ) {
+      await interaction.followUp({
+        content:
+          "❌ حدث خطأ غير متوقع.",
+        ephemeral: true
+      }).catch(() => {});
+    } else {
+      await interaction.reply({
+        content:
+          "❌ حدث خطأ غير متوقع.",
+        ephemeral: true
+      }).catch(() => {});
+    }
   }
-);
+});
+
+// ==================== ترحيب الأعضاء ====================
+
+client.on("guildMemberAdd", async member => {
+  try {
+    const cfg =
+      getConfig(member.guild.id);
+
+    if (!cfg.welcomeEnabled) {
+      return;
+    }
+
+    let role = null;
+
+    if (cfg.traineeRoleId) {
+      role =
+        member.guild.roles.cache.get(
+          cfg.traineeRoleId
+        );
+
+      if (role) {
+        await member.roles.add(role)
+          .catch(error =>
+            console.error(
+              "❌ فشل إعطاء رتبة المتدرب:",
+              error
+            )
+          );
+      }
+    }
+
+    if (cfg.welcomeChannelId) {
+      const channel =
+        member.guild.channels.cache.get(
+          cfg.welcomeChannelId
+        );
+
+      if (
+        channel &&
+        channel.type === ChannelType.GuildText
+      ) {
+        const message =
+          renderWelcome(
+            cfg.welcomeMessage,
+            member,
+            role
+          );
+
+        await channel.send(message)
+          .catch(() => {});
+      }
+    }
+  } catch (error) {
+    console.error(
+      "❌ Welcome Error:",
+      error
+    );
+  }
+});
 
 // ==================== تسجيل الدخول ====================
 
